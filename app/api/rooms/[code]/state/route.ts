@@ -42,12 +42,40 @@ export async function GET(
       address: p.wallet.classicAddress,
     }));
 
+    // Pending counts for UI indicators
+    const pendingEscrows = Array.from(room.pendingEscrows.values())
+      .filter(e => e.status === 'pending_iot')
+      .map(e => ({
+        id: e.id,
+        participantId: e.participantId,
+        kWh: e.kWh,
+        status: e.status,
+        createdAt: e.createdAt,
+        finishAfter: e.finishAfter,
+        escrowTxHash: e.escrowTxHash,
+      }));
+
+    const pendingSettlementCount = room.pendingSettlement.length;
+
+    const activeLoans = room.activeLoans.map(l => ({
+      id: l.id,
+      borrowerParticipantId: l.borrowerParticipantId,
+      kWh: l.kWh,
+      mptAmount: l.mptAmount,
+      dueDateRippleTime: l.dueDateRippleTime,
+      status: l.status,
+      simulated: l.simulated,
+    }));
+
     return NextResponse.json({
       participants,
       battery,
       orderbook: { asks, bids, midPrice, ammSpotPrice },
       co2SavedKg: room.co2SavedKg,
       location: room.location,
+      pendingEscrows,
+      pendingSettlementCount,
+      activeLoans,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

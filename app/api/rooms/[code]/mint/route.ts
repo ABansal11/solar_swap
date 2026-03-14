@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClient } from '@/lib/xrpl';
-import { getRoom, getParticipant } from '@/lib/rooms';
-import { mintSolar, authorizeMpt, authorizeMptHolder } from '@/lib/mpt';
-import { createDexAsk } from '@/lib/dex';
-import { getBatteryState } from '@/lib/battery';
+import { getRoom, getParticipant, addPendingEscrow } from '@/lib/rooms';
+import { authorizeMpt, authorizeMptHolder } from '@/lib/mpt';
 import { getAmmSpotPrice, ammVote } from '@/lib/amm';
+import { getBatteryState } from '@/lib/battery';
+import { createDeliveryEscrow, scheduleIoTVerification } from '@/lib/escrow';
 
 export async function POST(
   req: NextRequest,
@@ -41,26 +41,18 @@ export async function POST(
     // Demand response: vote to increase AMM fee
     if (battery.isDemandResponse) {
       try {
-        await ammVote(client, room.issuerWallet, room.mptId, 300); // 3%
+        await ammVote(client, room.issuerWallet, room.mptId, 300);
       } catch (e) {
-        console.warn('[rooms/mint] AMMVote failed (possibly no AMM yet):', e);
+        console.warn('[rooms/mint] AMMVote failed:', e);
       }
     }
 
-    // Ensure participant is still authorized (idempotent)
-    try {
-      await authorizeMpt(client, participant.wallet, room.mptId);
-    } catch {}
-    try {
-      await authorizeMptHolder(client, room.issuerWallet, participant.wallet.classicAddress, room.mptId);
-    } catch {}
+    // Ensure participant is authorized (idempotent)
+    try { await authorizeMpt(client, participant.wallet, room.mptId); } catch {}
+    try { await authorizeMptHolder(client, room.issuerWallet, participant.wallet.classicAddress, room.mptId); } catch {}
 
     const spotPrice = await getAmmSpotPrice(client, room.mptId);
     const pricePerKwh = minPricePerKwh || spotPrice;
-
-    // Scale: kWh * 100 = token amount (2 decimal places)
-    const tokenAmount = Math.round(kWh * 100).toString();
-    const rlusdAmount = (kWh * pricePerKwh).toFixed(6);
 
     const provenance = {
       houseId: participant.houseId,
@@ -69,35 +61,44 @@ export async function POST(
       batteryLevel: battery.level,
     };
 
-    // Mint SOLAR to participant's wallet
-    const { txHash: mintTxHash } = await mintSolar(
-      client,
-      room.issuerWallet,
-      participant.wallet.classicAddress,
-      room.mptId,
-      tokenAmount,
-      provenance
-    );
+    // Create delivery bond escrow (producer stakes 1 XRP until IoT confirms kWh delivery)
+    const { escrowSequence, finishAfter, cancelAfter, txHash: escrowTxHash } =
+      await createDeliveryEscrow(client, participant.wallet, kWh);
 
-    // Post DEX ask from participant's wallet
-    const { txHash: offerTxHash, sequence } = await createDexAsk(
-      client,
+    const escrowId = crypto.randomUUID();
+
+    addPendingEscrow(upperCode, {
+      id: escrowId,
+      participantId,
+      escrowSequence,
+      kWh,
+      provenance,
+      status: 'pending_iot',
+      createdAt: Date.now(),
+      finishAfter,
+      escrowTxHash,
+    });
+
+    // Schedule IoT verification: EscrowFinish + mint fires ~40s later (after FinishAfter=35s)
+    scheduleIoTVerification(
+      upperCode,
+      escrowId,
+      escrowSequence,
       participant.wallet,
+      room.issuerWallet,
       room.mptId,
-      tokenAmount,
-      rlusdAmount,
+      kWh,
       provenance
     );
 
     return NextResponse.json({
-      success: true,
-      txHash: offerTxHash,
-      mintTxHash,
-      offerId: sequence,
+      status: 'pending_iot',
+      escrowId,
+      escrowTxHash,
+      verifyingIn: 35,
       kWh,
-      tokenAmount,
       pricePerKwh,
-      rlusdAmount,
+      houseId: participant.houseId,
       provenance,
     });
   } catch (error: any) {

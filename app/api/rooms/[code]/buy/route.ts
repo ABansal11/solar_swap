@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClient } from '@/lib/xrpl';
-import { getRoom, getParticipant, incrementRoomCo2 } from '@/lib/rooms';
+import { getRoom, getParticipant, incrementRoomCo2, addPendingSettlement } from '@/lib/rooms';
 import { authorizeMpt, authorizeMptHolder } from '@/lib/mpt';
 import { getOrderBook, createDexBid, cancelOffer } from '@/lib/dex';
 import { ammSwap, getAmmSpotPrice } from '@/lib/amm';
@@ -18,7 +18,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { participantId, rlusdAmount = '1' } = body;
+  const { participantId, rlusdAmount = '1', forceImmediate = false } = body;
 
   if (!participantId) {
     return NextResponse.json({ error: 'participantId is required' }, { status: 400 });
@@ -29,27 +29,55 @@ export async function POST(
     return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
   }
 
+  const amount = parseFloat(rlusdAmount);
+
+  // Queue micro-trades (≤ 2 RLUSD) for batch settlement unless forced immediate
+  if (amount <= 2 && !forceImmediate) {
+    try {
+      const client = await getClient();
+      const spotPrice = await getAmmSpotPrice(client, room.mptId);
+      const kWh = amount / spotPrice;
+
+      // Find a producer address from the order book (best ask)
+      const { asks } = await getOrderBook(client, room.mptId);
+      const freshAsks = asks.filter(a => !a.expired);
+      const producerAddress = freshAsks[0]?.account ?? room.issuerWallet.classicAddress;
+
+      addPendingSettlement(upperCode, {
+        id: crypto.randomUUID(),
+        buyerParticipantId: participantId,
+        producerAddress,
+        rlusdAmount: amount.toFixed(6),
+        kWh,
+        queuedAt: Date.now(),
+      });
+
+      const pendingCount = room.pendingSettlement.length;
+
+      return NextResponse.json({
+        status: 'queued',
+        pendingCount,
+        rlusdAmount,
+        kWh: kWh.toFixed(2),
+        message: `Trade queued for batch settlement (${pendingCount} pending)`,
+      });
+    } catch (error: any) {
+      console.error(`[rooms/${upperCode}/buy] Queue error:`, error);
+      // Fall through to immediate execution on error
+    }
+  }
+
+  // Immediate execution (amount > 2 RLUSD or forceImmediate=true)
   try {
     const client = await getClient();
 
-    // Ensure participant is authorized (idempotent)
-    try {
-      await authorizeMpt(client, participant.wallet, room.mptId);
-    } catch {}
-    try {
-      await authorizeMptHolder(client, room.issuerWallet, participant.wallet.classicAddress, room.mptId);
-    } catch {}
+    try { await authorizeMpt(client, participant.wallet, room.mptId); } catch {}
+    try { await authorizeMptHolder(client, room.issuerWallet, participant.wallet.classicAddress, room.mptId); } catch {}
 
-    // Check order book for fresh asks
     const { asks } = await getOrderBook(client, room.mptId);
 
-    // Cancel expired offers (best effort)
     for (const ask of asks.filter(a => a.expired)) {
-      try {
-        await cancelOffer(client, participant.wallet, ask.sequence);
-      } catch (e) {
-        console.warn('[rooms/buy] Failed to cancel expired offer:', e);
-      }
+      try { await cancelOffer(client, participant.wallet, ask.sequence); } catch {}
     }
 
     const freshAsks = asks.filter(a => !a.expired);
@@ -60,14 +88,12 @@ export async function POST(
     let source: 'DEX' | 'AMM';
 
     if (freshAsks.length > 0) {
-      // DEX: match against best ask
       const result = await createDexBid(client, participant.wallet, room.mptId, rlusdAmount);
       txHash = result.txHash;
       solarReceived = result.solarReceived;
       provenance = freshAsks[0].provenance;
       source = 'DEX';
     } else {
-      // AMM fallback
       const result = await ammSwap(client, participant.wallet, room.mptId, rlusdAmount);
       txHash = result.txHash;
       solarReceived = result.solarReceived;
@@ -75,7 +101,7 @@ export async function POST(
       source = 'AMM';
     }
 
-    const kWh = solarReceived / 100; // scale back from token units
+    const kWh = solarReceived / 100;
     const co2Saved = kWh * 0.386;
     incrementRoomCo2(upperCode, co2Saved);
 
