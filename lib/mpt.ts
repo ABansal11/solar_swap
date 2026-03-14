@@ -93,7 +93,7 @@ export async function setTrustLine(client: Client, wallet: Wallet): Promise<void
 }
 
 export async function seedRlusd(client: Client, funderWallet: Wallet, destAddress: string, amount: string): Promise<void> {
-  // Fund via XRP first, then send RLUSD once trustline is set
+  // Fund via XRP first (prerequisite before trustline interactions)
   const tx = await client.autofill({
     TransactionType: 'Payment',
     Account: funderWallet.classicAddress,
@@ -101,5 +101,65 @@ export async function seedRlusd(client: Client, funderWallet: Wallet, destAddres
     Amount: amount, // XRP in drops
   });
   const signed = funderWallet.sign(tx);
+  await client.submitAndWait(signed.tx_blob);
+}
+
+/**
+ * Attempt to acquire testnet RLUSD for `wallet` by routing a path-payment
+ * through the RLUSD issuer's DEX offers (XRP → RLUSD via any available path).
+ * Returns true if successful, false if no path exists on this testnet.
+ */
+export async function acquireRlusd(
+  client: Client,
+  wallet: Wallet,
+  rlusdAmount: string
+): Promise<boolean> {
+  // Ensure trustline is set
+  try { await setTrustLine(client, wallet); } catch {}
+
+  try {
+    const maxXrpDrops = String(Math.ceil(parseFloat(rlusdAmount) * 30 * 1_000_000)); // 30 XRP per RLUSD max
+    const tx = await client.autofill({
+      TransactionType: 'Payment',
+      Account: wallet.classicAddress,
+      Destination: wallet.classicAddress,
+      Amount: {
+        currency: RLUSD_CURRENCY,
+        issuer: RLUSD_ISSUER,
+        value: rlusdAmount,
+      },
+      SendMax: maxXrpDrops,
+      Flags: 0x00020000, // tfPartialPayment — succeed even if only partial
+    });
+    const signed = wallet.sign(tx);
+    await client.submitAndWait(signed.tx_blob);
+    return true;
+  } catch (e: any) {
+    console.warn('[acquireRlusd] Path-payment failed (no DEX path to RLUSD issuer on this testnet):', e.message?.slice(0, 80));
+    return false;
+  }
+}
+
+/**
+ * Send RLUSD from bankWallet to destAddress.
+ * bankWallet must already hold RLUSD (acquired via acquireRlusd or manual funding).
+ */
+export async function distributeRlusd(
+  client: Client,
+  bankWallet: Wallet,
+  destAddress: string,
+  rlusdAmount: string
+): Promise<void> {
+  const tx = await client.autofill({
+    TransactionType: 'Payment',
+    Account: bankWallet.classicAddress,
+    Destination: destAddress,
+    Amount: {
+      currency: RLUSD_CURRENCY,
+      issuer: RLUSD_ISSUER,
+      value: rlusdAmount,
+    },
+  });
+  const signed = bankWallet.sign(tx);
   await client.submitAndWait(signed.tx_blob);
 }

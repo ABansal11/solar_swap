@@ -47,9 +47,11 @@ export async function getAmmSpotPrice(
     const amm = (result.result as any).amm;
     if (!amm) return 0.10;
 
-    const solar = parseFloat(amm.amount?.value || '1');
+    // amount.value is in raw token units (AssetScale:2 → 100 raw = 1 kWh)
+    // Multiply by 100 to convert raw-token price to RLUSD/kWh
+    const solarRaw = parseFloat(amm.amount?.value || '1');
     const rlusd = parseFloat(amm.amount2?.value || '0.1');
-    return rlusd / solar;
+    return (rlusd / solarRaw) * 100;
   } catch {
     return 0.10;
   }

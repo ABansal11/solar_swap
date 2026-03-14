@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClient } from '@/lib/xrpl';
-import { authorizeMpt, authorizeMptHolder, setTrustLine } from '@/lib/mpt';
+import { authorizeMpt, authorizeMptHolder, setTrustLine, acquireRlusd, distributeRlusd } from '@/lib/mpt';
 import { getRoom, joinRoom } from '@/lib/rooms';
+
+// RLUSD given to each participant on join so they can buy energy immediately
+const PARTICIPANT_RLUSD_SEED = '20';
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -61,6 +64,30 @@ export async function POST(
       await setTrustLine(client, participantWallet);
     } catch (e) {
       console.warn(`[rooms/${upperCode}/join] setTrustLine failed (may already be set):`, e);
+    }
+
+    // Distribute RLUSD to participant so they can buy energy.
+    // Strategy 1: room issuer already has RLUSD (from AMM seeding) → distribute from issuer.
+    // Strategy 2: if issuer is dry, try to acquire more RLUSD for the issuer first.
+    step = 'distribute_rlusd';
+    console.log(`[rooms/${upperCode}/join] Distributing ${PARTICIPANT_RLUSD_SEED} RLUSD to participant...`);
+    try {
+      await distributeRlusd(client, room.issuerWallet, participantWallet.classicAddress, PARTICIPANT_RLUSD_SEED);
+      console.log(`[rooms/${upperCode}/join] RLUSD distributed.`);
+    } catch (e: any) {
+      // Issuer may be out of RLUSD — try to acquire more first
+      console.warn(`[rooms/${upperCode}/join] Direct distribute failed, acquiring RLUSD for issuer...`);
+      const got = await acquireRlusd(client, room.issuerWallet, String(parseFloat(PARTICIPANT_RLUSD_SEED) + 1));
+      if (got) {
+        try {
+          await distributeRlusd(client, room.issuerWallet, participantWallet.classicAddress, PARTICIPANT_RLUSD_SEED);
+          console.log(`[rooms/${upperCode}/join] RLUSD distributed after top-up.`);
+        } catch (e2) {
+          console.warn(`[rooms/${upperCode}/join] RLUSD distribution failed after top-up:`, e2);
+        }
+      } else {
+        console.warn(`[rooms/${upperCode}/join] Could not acquire RLUSD for issuer — participant will not be able to buy energy.`);
+      }
     }
 
     step = 'add_participant';

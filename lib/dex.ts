@@ -110,10 +110,19 @@ export async function getOrderBook(
       limit: 10,
     } as any);
 
-    const parseOffer = (offer: any): EnrichedOffer => {
-      const solar = parseFloat(offer.TakerGets?.value || offer.TakerPays?.value || '1');
-      const rlusd = parseFloat(offer.TakerPays?.value || offer.TakerGets?.value || '0.1');
-      const pricePerKwh = rlusd / solar;
+    // For asks (taker_pays=RLUSD, taker_gets=SOLAR):
+    //   TakerGets = SOLAR raw tokens,  TakerPays = RLUSD
+    // For bids (taker_pays=SOLAR, taker_gets=RLUSD):
+    //   TakerPays = SOLAR raw tokens,  TakerGets = RLUSD
+    // pricePerKwh = (RLUSD / solarRaw) * 100  — because 100 raw tokens = 1 kWh (AssetScale:2)
+    const parseOffer = (offer: any, isBid: boolean): EnrichedOffer => {
+      const solarRaw = parseFloat(
+        (isBid ? offer.TakerPays?.value : offer.TakerGets?.value) || '1'
+      );
+      const rlusd = parseFloat(
+        (isBid ? offer.TakerGets?.value : offer.TakerPays?.value) || '0.1'
+      );
+      const pricePerKwh = (rlusd / solarRaw) * 100;
 
       let provenance: EnrichedOffer['provenance'] | undefined;
       let ageHours = 0;
@@ -130,7 +139,7 @@ export async function getOrderBook(
       return {
         sequence: offer.Sequence,
         account: offer.Account,
-        solarAmount: String(solar),
+        solarAmount: String(solarRaw),
         rlusdAmount: String(rlusd),
         pricePerKwh,
         provenance,
@@ -139,8 +148,8 @@ export async function getOrderBook(
       };
     };
 
-    const asks = ((asksResult.result as any).offers || []).map(parseOffer);
-    const bids = ((bidsResult.result as any).offers || []).map(parseOffer);
+    const asks = ((asksResult.result as any).offers || []).map((o: any) => parseOffer(o, false));
+    const bids = ((bidsResult.result as any).offers || []).map((o: any) => parseOffer(o, true));
 
     return { asks, bids };
   } catch {
