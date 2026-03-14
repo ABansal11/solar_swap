@@ -60,7 +60,7 @@ export async function GET(
       for (const t of transactions) {
         const tx = t.tx_json as any;
         if (!tx) continue;
-        if (tx.TransactionType !== 'Payment' && tx.TransactionType !== 'OfferCreate') continue;
+        if (tx.TransactionType !== 'Payment' && tx.TransactionType !== 'OfferCreate' && tx.TransactionType !== 'EscrowFinish') continue;
 
         let provenance;
         if (tx.Memos?.[0]?.Memo?.MemoData) {
@@ -71,11 +71,21 @@ export async function GET(
         }
 
         const amount = tx.Amount;
-        const amountStr = typeof amount === 'string'
-          ? `${(parseInt(amount) / 1000000).toFixed(2)} XRP`
-          : `${parseFloat(amount?.value || '0').toFixed(2)} ${amount?.mpt_issuance_id ? 'SOLAR' : (amount?.currency || '')}`;
+        let amountStr: string;
+        let kWh = 0;
 
-        const kWh = provenance ? parseFloat(amountStr) / 100 : 0;
+        if (tx.TransactionType === 'EscrowFinish') {
+          amountStr = '1.00 XRP (bond released)';
+        } else if (typeof amount === 'string') {
+          amountStr = `${(parseInt(amount) / 1000000).toFixed(2)} XRP`;
+        } else if (amount?.mpt_issuance_id) {
+          // MPT value is raw tokens; AssetScale=2 means 100 raw = 1 kWh
+          const rawTokens = parseFloat(amount.value || '0');
+          kWh = rawTokens / 100;
+          amountStr = `${kWh.toFixed(2)} kWh SOLAR`;
+        } else {
+          amountStr = `${parseFloat(amount?.value || '0').toFixed(4)} ${amount?.currency || ''}`;
+        }
 
         trades.push({
           txHash: tx.hash || (t as any).hash || '',

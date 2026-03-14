@@ -21,7 +21,7 @@ export async function GET(
     const client = await getClient();
 
     const [battery, orderbookData, ammSpotPrice] = await Promise.all([
-      Promise.resolve(getBatteryState()),
+      Promise.resolve(getBatteryState(room.participants.size || 1)),
       getOrderBook(client, room.mptId),
       getAmmSpotPrice(client, room.mptId),
     ]);

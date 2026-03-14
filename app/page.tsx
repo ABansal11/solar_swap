@@ -111,14 +111,14 @@ export default function LobbyPage() {
             />
           </div>
 
-          {/* Create Room */}
+          {/* Create Neighborhood */}
           {!showCityPicker ? (
             <button
               onClick={handleCreateClick}
               disabled={isLoading}
               className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl text-sm transition-colors mb-4"
             >
-              {creating ? '⏳ Setting up room... (30–60s)' : 'Create Room'}
+              {creating ? '⏳ Setting up neighborhood... (30–60s)' : 'Create Neighborhood'}
             </button>
           ) : (
             <div className="mt-4 space-y-2 mb-4">
@@ -138,7 +138,7 @@ export default function LobbyPage() {
                 ))}
               </div>
               {creating && (
-                <p className="text-xs text-blue-300 text-center">⏳ Setting up room... (30–60s)</p>
+                <p className="text-xs text-blue-300 text-center">⏳ Setting up neighborhood... (30–60s)</p>
               )}
               <button
                 onClick={() => setShowCityPicker(false)}
@@ -157,7 +157,7 @@ export default function LobbyPage() {
             <div className="flex-1 h-px bg-slate-700" />
           </div>
 
-          {/* Join Room */}
+          {/* Join Neighborhood */}
           <div className="flex gap-2">
             <input
               type="text"
@@ -173,7 +173,7 @@ export default function LobbyPage() {
               disabled={isLoading}
               className="bg-green-600 hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors whitespace-nowrap"
             >
-              {joining ? '⏳ Joining...' : 'Join Room'}
+              {joining ? '⏳ Joining...' : 'Join Neighborhood'}
             </button>
           </div>
 
@@ -185,14 +185,10 @@ export default function LobbyPage() {
 
           {joining && (
             <div className="mt-4 p-3 bg-blue-900/30 border border-blue-700/50 rounded-lg text-xs text-blue-300">
-              Setting up your XRPL wallet and authorizing MPT tokens... this can take 30–60 seconds.
+              Setting up your XRPL wallet and joining the neighborhood... this can take 30–60 seconds.
             </div>
           )}
         </div>
-
-        <p className="text-center text-xs text-slate-600 mt-4">
-          Each room supports up to 6 participants. Each gets their own XRPL wallet.
-        </p>
       </div>
     </main>
   );

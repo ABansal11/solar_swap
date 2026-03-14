@@ -1,7 +1,7 @@
 'use client';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface PricePoint {
   time: string;
@@ -16,16 +16,25 @@ interface PriceChartProps {
 
 export default function PriceChart({ currentPrice, ammSpotPrice }: PriceChartProps) {
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
+  const latestRef = useRef({ currentPrice, ammSpotPrice });
 
+  // Keep ref in sync so the interval always reads the latest prices
   useEffect(() => {
-    const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-
-    setPriceHistory(prev => {
-      const next = [...prev, { time: timeStr, price: currentPrice, ammPrice: ammSpotPrice }];
-      return next.slice(-30); // keep last 30 points
-    });
+    latestRef.current = { currentPrice, ammSpotPrice };
   }, [currentPrice, ammSpotPrice]);
+
+  // Add a new price point every 10 seconds regardless of whether price changed
+  useEffect(() => {
+    const addPoint = () => {
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+      const { currentPrice: p, ammSpotPrice: a } = latestRef.current;
+      setPriceHistory(prev => [...prev, { time: timeStr, price: p, ammPrice: a }].slice(-30));
+    };
+    addPoint();
+    const interval = setInterval(addPoint, 10_000);
+    return () => clearInterval(interval);
+  }, []); // run once
 
   if (priceHistory.length < 2) {
     return (

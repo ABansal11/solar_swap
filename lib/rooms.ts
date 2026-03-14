@@ -4,7 +4,7 @@ import { CityOption } from './geo';
 export interface Participant {
   id: string;       // UUID, stored in client's localStorage
   name: string;
-  houseId: number;  // 1–6, assigned on join
+  houseId: number;  // assigned on join (1-indexed, no upper limit)
   wallet: Wallet;
   joinedAt: number;
 }
@@ -93,12 +93,10 @@ export function joinRoom(
 ): { participant: Participant } | { error: string } {
   const room = rooms.get(code);
   if (!room) return { error: 'Room not found' };
-  if (room.participants.size >= 6) return { error: 'Room is full (max 6 participants)' };
 
   const usedIds = new Set(Array.from(room.participants.values()).map(p => p.houseId));
   let houseId = 1;
-  while (usedIds.has(houseId) && houseId <= 6) houseId++;
-  if (houseId > 6) return { error: 'No available house slots' };
+  while (usedIds.has(houseId)) houseId++;
 
   const participant: Participant = {
     id: crypto.randomUUID(),

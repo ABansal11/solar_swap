@@ -57,42 +57,38 @@ export async function POST(
       trades,
     });
   } catch (error: any) {
-    console.error(`[rooms/${upperCode}/batch-settle] Error:`, error);
+    console.error(`[rooms/${upperCode}/batch-settle] Batch tx failed, falling back to individual settlements:`, error.message);
 
-    // Fallback: if Batch amendment not enabled, execute settlements individually
-    if (error.message?.includes('temUNKNOWN') || error.message?.includes('notEnabled') || error.message?.includes('Unsupported')) {
-      try {
-        const client = await getClient();
-        const { createDexBid } = await import('@/lib/dex');
-        const results: any[] = [];
+    // Fallback: Batch amendment may not be enabled — execute settlements individually
+    try {
+      const client = await getClient();
+      const { createDexBid } = await import('@/lib/dex');
+      const results: any[] = [];
 
-        for (const s of toSettle) {
-          const participant = room.participants.get(s.buyerParticipantId);
-          if (!participant) continue;
-          try {
-            const r = await createDexBid(client, participant.wallet, room.mptId, s.rlusdAmount);
-            results.push(r);
-          } catch (e) {
-            console.warn('[batch-settle fallback] Individual trade failed:', e);
-          }
+      for (const s of toSettle) {
+        const participant = room.participants.get(s.buyerParticipantId);
+        if (!participant) continue;
+        try {
+          const r = await createDexBid(client, participant.wallet, room.mptId, s.rlusdAmount);
+          results.push(r);
+        } catch (e) {
+          console.warn('[batch-settle fallback] Individual trade failed:', e);
         }
-
-        clearSettlements(upperCode, toSettle.map(s => s.id));
-
-        return NextResponse.json({
-          success: true,
-          txHash: results[0]?.txHash ?? 'simulated',
-          settledCount: results.length,
-          totalRlusd: toSettle.reduce((s, t) => s + parseFloat(t.rlusdAmount), 0).toFixed(6),
-          atomic: false,
-          fallback: true,
-          message: 'Batch amendment not enabled; settled individually',
-        });
-      } catch (fallbackError: any) {
-        return NextResponse.json({ error: fallbackError.message }, { status: 500 });
       }
-    }
 
-    return NextResponse.json({ error: error.message }, { status: 500 });
+      clearSettlements(upperCode, toSettle.map(s => s.id));
+
+      return NextResponse.json({
+        success: true,
+        txHash: results[0]?.txHash ?? 'fallback',
+        settledCount: results.length,
+        totalRlusd: toSettle.reduce((s, t) => s + parseFloat(t.rlusdAmount), 0).toFixed(6),
+        atomic: false,
+        fallback: true,
+        message: 'Batch amendment not enabled; settled individually',
+      });
+    } catch (fallbackError: any) {
+      return NextResponse.json({ error: fallbackError.message }, { status: 500 });
+    }
   }
 }

@@ -459,8 +459,8 @@ function IoTStatusCard({ status }: { status: IoTStatus }) {
   if (status.status === 'failed') {
     return (
       <div className="bg-red-900/40 border border-red-700/50 rounded p-3 text-xs">
-        <div className="text-red-400 font-semibold">❌ Meter rejected — insufficient output</div>
-        <div className="text-red-600 mt-0.5">Delivery bond (1 XRP) returned via EscrowCancel</div>
+        <div className="text-red-400 font-semibold">❌ IoT meter rejected delivery</div>
+        <div className="text-red-600 mt-0.5">Delivery bond (1 XRP) will be returned via EscrowCancel after the lock period (~2 min). You can retry.</div>
       </div>
     );
   }

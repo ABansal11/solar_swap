@@ -18,7 +18,7 @@ export interface BatteryState {
 }
 
 let co2SavedKg = 0;
-const houseBalances: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+const houseBalances: Record<number, number> = {};
 
 export function incrementCo2(kWh: number): void {
   co2SavedKg += kWh * 0.386;
@@ -28,30 +28,38 @@ export function updateHouseBalance(houseId: number, delta: number): void {
   houseBalances[houseId] = Math.max(0, (houseBalances[houseId] || 0) + delta);
 }
 
-// Hexagon positions for 6 houses around center (SVG coords, center at 250,200)
-const HOUSE_POSITIONS = [
-  { x: 250, y: 60 },   // top
-  { x: 390, y: 130 },  // top-right
-  { x: 390, y: 270 },  // bottom-right
-  { x: 250, y: 340 },  // bottom
-  { x: 110, y: 270 },  // bottom-left
-  { x: 110, y: 130 },  // top-left
-];
+// Compute house positions evenly around a circle in SVG space.
+// Center: (250, 200), radius: 140, starting from the top (−π/2).
+function computeHousePositions(count: number): { x: number; y: number }[] {
+  const CX = 250, CY = 200, R = 140;
+  return Array.from({ length: count }, (_, i) => {
+    const angle = (2 * Math.PI * i / count) - Math.PI / 2;
+    return {
+      x: Math.round(CX + R * Math.cos(angle)),
+      y: Math.round(CY + R * Math.sin(angle)),
+    };
+  });
+}
 
-export function getBatteryState(): BatteryState {
+export function getBatteryState(houseCount = 6): BatteryState {
+  const count = Math.max(1, houseCount);
   const now = Date.now();
-  // sin-based oscillation: 40-80% range, period ~5 minutes for demo
-  const sinVal = Math.sin(now / 300000);
-  const level = Math.round(sinVal * 20 + 60); // 40-80 range
+  // Demo mode: battery cycles 40–80% over ~3 minutes
+  const sinVal = Math.sin(now / 30000);
+  const level = Math.round(sinVal * 20 + 60); // 40–80 range
 
-  const hour = new Date().getHours();
-  const timeOfDay = (hour >= 17 && hour < 21) ? 'peak' : 'offpeak';
+  // Demo mode: cycle peak/off-peak every 3 minutes (last 60s of each 3-min window = peak)
+  const cycleSecs = Math.floor(now / 1000) % 180;
+  const timeOfDay: 'peak' | 'offpeak' = cycleSecs >= 120 ? 'peak' : 'offpeak';
 
-  const houses: House[] = HOUSE_POSITIONS.map((pos, i) => {
+  const positions = computeHousePositions(count);
+
+  const houses: House[] = positions.map((pos, i) => {
     const id = i + 1;
-    // Alternate houses produce during day, others at different times
     const producing = level > 50 && (id % 2 === 0 ? sinVal > -0.3 : sinVal > 0.2);
-    const solarOutput = producing ? Math.round((level / 100) * 3 + Math.sin(now / 60000 + id) * 0.5) * 10 / 10 : 0;
+    const solarOutput = producing
+      ? Math.round((level / 100) * 3 + Math.sin(now / 6000 + id) * 0.5) * 10 / 10
+      : 0;
     return {
       id,
       solarOutput,

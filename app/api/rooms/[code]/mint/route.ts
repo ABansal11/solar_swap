@@ -88,7 +88,8 @@ export async function POST(
       room.issuerWallet,
       room.mptId,
       kWh,
-      provenance
+      provenance,
+      minPricePerKwh ? parseFloat(minPricePerKwh) : undefined
     );
 
     return NextResponse.json({

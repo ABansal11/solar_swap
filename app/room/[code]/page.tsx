@@ -336,7 +336,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
                 {/* Participant list */}
                 <div className="bg-slate-800 rounded-xl p-4">
                   <h2 className="font-semibold text-sm text-slate-300 mb-3">
-                    Participants ({participants.length}/6)
+                    Participants ({participants.length})
                   </h2>
                   {participants.length === 0 ? (
                     <div className="text-xs text-slate-500">No participants yet. Share the code!</div>
@@ -372,14 +372,6 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
                           </div>
                         );
                       })}
-                      {Array.from({ length: 6 - participants.length }).map((_, i) => (
-                        <div key={`empty-${i}`} className="flex items-center gap-2 p-2 rounded-lg border border-dashed border-slate-700 text-xs text-slate-600">
-                          <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs">
-                            {participants.length + i + 1}
-                          </div>
-                          <span>Waiting for player...</span>
-                        </div>
-                      ))}
                     </div>
                   )}
                 </div>
