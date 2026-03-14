@@ -7,16 +7,8 @@ interface Trade {
   to: string;
   amount: string;
   timestamp: number;
-  provenance?: {
-    houseId: number;
-    generatedAt: number;
-    solarKw: number;
-  };
+  provenance?: { houseId: number; generatedAt: number; solarKw: number };
   co2Saved?: number;
-}
-
-interface TradeHistoryProps {
-  trades: Trade[];
 }
 
 function shortenAddress(addr: string): string {
@@ -29,40 +21,39 @@ function timeAgo(timestamp: number): string {
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
   if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  return `${hrs}h ago`;
+  return `${Math.floor(mins / 60)}h ago`;
 }
 
-export default function TradeHistory({ trades }: TradeHistoryProps) {
+export default function TradeHistory({ trades }: { trades: Trade[] }) {
   return (
-    <div className="bg-slate-800 rounded-lg p-4">
-      <h3 className="text-white font-semibold text-sm mb-3">Trade Feed</h3>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 18px', color: 'var(--text-on-dark)' }}>
+      <span className="label" style={{ display: 'block', marginBottom: '12px' }}>Trade Feed</span>
 
       {trades.length === 0 ? (
-        <div className="text-slate-400 text-xs text-center py-4">
-          No trades yet. Complete setup and start trading!
+        <div style={{ fontSize: '11px', color: 'var(--text-muted-dark)', textAlign: 'center', padding: '16px 0', fontFamily: 'var(--mono)' }}>
+          No trades yet. Start trading!
         </div>
       ) : (
-        <div className="space-y-2 max-h-48 overflow-y-auto">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '192px', overflowY: 'auto' }}>
           {trades.map((trade, i) => (
-            <div key={i} className="bg-slate-700/50 rounded p-2 text-xs">
-              <div className="flex items-center justify-between mb-1">
-                <span className={`font-semibold ${trade.type === 'mint' ? 'text-blue-400' : 'text-green-400'}`}>
-                  {trade.type === 'mint' ? '⚡ Mint' : '🔄 Trade'}
+            <div key={i} style={{ background: 'var(--surface2)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontWeight: 600, color: trade.type === 'mint' ? 'var(--gold)' : '#c4a035', fontFamily: 'var(--mono)' }}>
+                  {trade.type === 'mint' ? 'mint' : 'trade'}
                 </span>
-                <span className="text-slate-400">{timeAgo(trade.timestamp)}</span>
+                <span style={{ color: 'var(--text-muted-dark)', fontFamily: 'var(--mono)', fontSize: '10px' }}>{timeAgo(trade.timestamp)}</span>
               </div>
 
               {trade.provenance && (
-                <div className="text-slate-300">
+                <div style={{ color: 'var(--text-muted-dark)', marginBottom: '3px', fontFamily: 'var(--mono)', fontSize: '10px' }}>
                   House {trade.provenance.houseId} → {shortenAddress(trade.to)}
                 </div>
               )}
 
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-white">{trade.amount}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-on-dark)', fontFamily: 'var(--mono)' }}>{trade.amount}</span>
                 {trade.co2Saved != null && trade.co2Saved > 0 && (
-                  <span className="text-green-400">🌿 {trade.co2Saved.toFixed(2)} kg CO₂</span>
+                  <span style={{ color: 'var(--gold)', fontSize: '10px', fontFamily: 'var(--mono)' }}>{trade.co2Saved.toFixed(2)} kg CO₂</span>
                 )}
               </div>
 
@@ -70,7 +61,7 @@ export default function TradeHistory({ trades }: TradeHistoryProps) {
                 href={`https://testnet.xrpl.org/transactions/${trade.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 mt-1 block truncate"
+                style={{ color: 'var(--gold)', display: 'block', marginTop: '3px', fontFamily: 'var(--mono)', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }}
               >
                 {shortenAddress(trade.txHash)}
               </a>

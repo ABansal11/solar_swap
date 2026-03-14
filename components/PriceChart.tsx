@@ -38,26 +38,26 @@ export default function PriceChart({ currentPrice, ammSpotPrice }: PriceChartPro
 
   if (priceHistory.length < 2) {
     return (
-      <div className="bg-slate-800 rounded-lg p-4 h-40 flex items-center justify-center">
-        <span className="text-slate-400 text-sm">Waiting for price data...</span>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 18px', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: 'var(--text-muted-dark)', fontFamily: 'var(--mono)', fontSize: '12px' }}>Waiting for price data...</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800 rounded-lg p-4">
-      <h3 className="text-white font-semibold text-sm mb-3">Price History (RLUSD/kWh)</h3>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 18px' }}>
+      <span className="label" style={{ display: 'block', marginBottom: '12px' }}>Price History (RLUSD/kWh)</span>
       <ResponsiveContainer width="100%" height={140}>
         <LineChart data={priceHistory}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="time" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-          <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} domain={['auto', 'auto']} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#2e2a1c" />
+          <XAxis dataKey="time" tick={{ fill: '#9e9688', fontSize: 10 }} />
+          <YAxis tick={{ fill: '#9e9688', fontSize: 10 }} domain={['auto', 'auto']} />
           <Tooltip
-            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px' }}
-            labelStyle={{ color: '#94a3b8' }}
+            contentStyle={{ backgroundColor: '#1e1a12', border: '1px solid #2e2a1c', borderRadius: '8px' }}
+            labelStyle={{ color: '#9e9688' }}
           />
-          <Line type="monotone" dataKey="price" stroke="#fbbf24" strokeWidth={2} dot={false} name="DEX Mid" />
-          <Line type="monotone" dataKey="ammPrice" stroke="#60a5fa" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="AMM Oracle" />
+          <Line type="monotone" dataKey="price" stroke="#c4a035" strokeWidth={2} dot={false} name="DEX Mid" />
+          <Line type="monotone" dataKey="ammPrice" stroke="#7a6020" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="AMM Oracle" />
         </LineChart>
       </ResponsiveContainer>
     </div>

@@ -1,26 +1,164 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html, body,
+  input, textarea, select, button {
+    font-family: "the-seasons", Georgia, serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Remap Tailwind's color palette to warm espresso/cream design system */
+@theme {
+  --color-slate-50:  #f8f5ef;
+  --color-slate-100: #f2ede2;
+  --color-slate-200: #e8e0d0;
+  --color-slate-300: #d4ccba;
+  --color-slate-400: #9e9688;
+  --color-slate-500: #7a7060;
+  --color-slate-600: #3d3528;
+  --color-slate-700: #2a2418;
+  --color-slate-800: #1e1a12;
+  --color-slate-900: #f2ede2;
+
+  --color-white: #f2ede2;
+
+  --color-green-300: #d4b045;
+  --color-green-400: #c4a035;
+  --color-green-500: #b08c28;
+  --color-green-600: #9a7820;
+  --color-green-900: #2a2010;
+
+  --color-yellow-300: #d4b045;
+  --color-yellow-400: #c4a035;
+  --color-yellow-500: #b08c28;
+
+  --color-blue-300: #c8a885;
+  --color-blue-400: #a88a65;
+  --color-blue-500: #9a7a55;
+  --color-blue-600: #7a5a35;
+  --color-blue-900: #2a1e10;
+
+  --color-red-300: #e08080;
+  --color-red-400: #c85050;
+  --color-red-500: #b04040;
+  --color-red-900: #2e1410;
+
+  --color-orange-400: #c07830;
+  --color-orange-500: #a86820;
+
+  --color-purple-300: #c8a8a0;
+  --color-purple-400: #a88880;
+  --color-purple-500: #907060;
+  --color-purple-600: #7a5545;
+  --color-purple-700: #6a4535;
+  --color-purple-900: #2a1810;
 }
+
+:root {
+  --bg: #f2ede2;
+  --bg2: #ebe5d8;
+  --surface: #1e1a12;
+  --surface2: #252016;
+  --border: #2e2a1c;
+  --border-light: #ccc6b4;
+  --gold: #c4a035;
+  --gold-muted: rgba(196,160,53,0.15);
+  --red: #c85050;
+  --text: #1a1710;
+  --text-muted: #7a7060;
+  --text-dim: #9e9688;
+  --text-on-dark: #f2ede2;
+  --text-muted-dark: #9e9688;
+  --mono: ui-monospace, 'SF Mono', Menlo, 'Courier New', monospace;
+  --sans: "the-seasons", Georgia, serif;
+  --radius: 22px;
+  --radius-sm: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-style: normal; }
+
+html, body,
+input, textarea, select, button {
+  font-family: "the-seasons", Georgia, serif;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  color: var(--text-on-dark);
+}
+
+.label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted-dark);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--gold-muted);
+  color: var(--gold);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(196,160,53,0.3);
+}
+
+.mono { font-family: var(--mono); }
+
+.dot-live {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #e8408c;
+  box-shadow: 0 0 8px #e8408c;
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 28px;
+  border-radius: var(--radius);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: var(--surface);
+}
+.btn-primary:hover { background: #d4b045; transform: translateY(-1px); }
+.btn-primary:disabled { background: var(--border); color: var(--text-muted-dark); transform: none; cursor: not-allowed; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-on-dark);
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
