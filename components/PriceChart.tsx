@@ -40,15 +40,15 @@ export default function PriceChart({ currentPrice, ammSpotPrice }: PriceChartPro
       <h3 className="text-white font-semibold text-sm mb-3">Price History (RLUSD/kWh)</h3>
       <ResponsiveContainer width="100%" height={140}>
         <LineChart data={priceHistory}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="time" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-          <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} domain={['auto', 'auto']} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#2e2a1c" />
+          <XAxis dataKey="time" tick={{ fill: '#9e9688', fontSize: 10 }} />
+          <YAxis tick={{ fill: '#9e9688', fontSize: 10 }} domain={['auto', 'auto']} />
           <Tooltip
-            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px' }}
-            labelStyle={{ color: '#94a3b8' }}
+            contentStyle={{ backgroundColor: '#1e1a12', border: '1px solid #2e2a1c', borderRadius: '6px' }}
+            labelStyle={{ color: '#9e9688' }}
           />
-          <Line type="monotone" dataKey="price" stroke="#fbbf24" strokeWidth={2} dot={false} name="DEX Mid" />
-          <Line type="monotone" dataKey="ammPrice" stroke="#60a5fa" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="AMM Oracle" />
+          <Line type="monotone" dataKey="price" stroke="#c4a035" strokeWidth={2} dot={false} name="DEX Mid" />
+          <Line type="monotone" dataKey="ammPrice" stroke="#7a6020" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="AMM Oracle" />
         </LineChart>
       </ResponsiveContainer>
     </div>

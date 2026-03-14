@@ -47,28 +47,21 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [participantName, setParticipantName] = useState<string>('');
   const [myHouseId, setMyHouseId] = useState<number | null>(null);
-
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [trades, setTrades] = useState<any[]>([]);
   const [activeFlow, setActiveFlow] = useState<{ fromHouse: number; toHouse: number } | null>(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-
   const [activeTab, setActiveTab] = useState<'local' | 'global'>('local');
   const [globalNeighborhoods, setGlobalNeighborhoods] = useState<any[]>([]);
   const [activeArc, setActiveArc] = useState<any>(null);
-
-  // Batch settle state
   const [settling, setSettling] = useState(false);
   const [settleResult, setSettleResult] = useState<any | null>(null);
 
   useEffect(() => {
     const pid = localStorage.getItem('participantId');
     const pname = localStorage.getItem('participantName');
-    if (!pid) {
-      router.push('/');
-      return;
-    }
+    if (!pid) { router.push('/'); return; }
     setParticipantId(pid);
     setParticipantName(pname || '');
   }, [router]);
@@ -76,37 +69,26 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const fetchState = useCallback(async () => {
     try {
       const res = await fetch(`/api/rooms/${roomCode}/state`);
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Failed to fetch room state');
-        return;
-      }
+      if (!res.ok) { const data = await res.json(); setError(data.error || 'Failed to fetch room state'); return; }
       const data: RoomState = await res.json();
       setRoomState(data);
-
       if (participantId) {
         const me = data.participants.find(p => p.id === participantId);
         if (me) setMyHouseId(me.houseId);
       }
-    } catch (e: any) {
-      setError(e.message);
-    }
+    } catch (e: any) { setError(e.message); }
   }, [roomCode, participantId]);
 
   const fetchTrades = useCallback(async () => {
     try {
       const res = await fetch(`/api/rooms/${roomCode}/transactions`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.trades) setTrades(data.trades);
-      }
+      if (res.ok) { const data = await res.json(); if (data.trades) setTrades(data.trades); }
     } catch {}
   }, [roomCode]);
 
   const fetchData = useCallback(async () => {
     await fetchState();
     await fetchTrades();
-
     fetch('/api/global/neighborhoods').then(r => r.json()).then(data => {
       if (Array.isArray(data)) setGlobalNeighborhoods(data);
     }).catch(() => {});
@@ -117,15 +99,11 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     fetchData();
     const stateInterval = setInterval(fetchState, 4000);
     const tradesInterval = setInterval(fetchTrades, 8000);
-    return () => {
-      clearInterval(stateInterval);
-      clearInterval(tradesInterval);
-    };
+    return () => { clearInterval(stateInterval); clearInterval(tradesInterval); };
   }, [fetchData, fetchState, fetchTrades, participantId]);
 
   function handleMintSuccess(result: any) {
-    fetchState();
-    fetchTrades();
+    fetchState(); fetchTrades();
     if (result.provenance?.houseId) {
       setActiveFlow({ fromHouse: result.provenance.houseId, toHouse: 0 });
       setTimeout(() => setActiveFlow(null), 2000);
@@ -133,8 +111,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   }
 
   function handleBuySuccess(result: any) {
-    fetchState();
-    fetchTrades();
+    fetchState(); fetchTrades();
     if (result.provenance?.houseId) {
       setActiveFlow({ fromHouse: result.provenance.houseId, toHouse: 0 });
       setTimeout(() => setActiveFlow(null), 2000);
@@ -142,24 +119,18 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   }
 
   async function handleBatchSettle() {
-    setSettling(true);
-    setSettleResult(null);
+    setSettling(true); setSettleResult(null);
     try {
       const res = await fetch(`/api/rooms/${roomCode}/batch-settle`, { method: 'POST' });
       const data = await res.json();
-      setSettleResult(data);
-      fetchState();
-      fetchTrades();
-    } catch (e: any) {
-      setSettleResult({ error: e.message });
-    }
+      setSettleResult(data); fetchState(); fetchTrades();
+    } catch (e: any) { setSettleResult({ error: e.message }); }
     setSettling(false);
   }
 
   function handleCopyCode() {
     navigator.clipboard.writeText(roomCode).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
     });
   }
 
@@ -170,8 +141,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const pendingSettlementCount = roomState?.pendingSettlementCount ?? 0;
 
   const nextPeakHour = () => {
-    const now = new Date();
-    const hour = now.getHours();
+    const now = new Date(); const hour = now.getHours();
     if (hour < 17) return `${17 - hour}h`;
     if (hour >= 21) return `${41 - hour}h`;
     return 'NOW';
@@ -179,193 +149,196 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   if (!participantId) {
     return (
-      <main className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
-        <div className="text-slate-400">Redirecting to lobby...</div>
+      <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--mono)', fontSize: '13px' }}>Redirecting to lobby...</span>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-900 text-white">
+    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       {/* Header */}
-      <header className="border-b border-slate-700 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⚡</span>
-            <div>
-              <h1 className="font-bold text-lg leading-none">SolarSwap</h1>
-              <p className="text-xs text-slate-400">P2P Energy Marketplace on XRPL</p>
-            </div>
-            <span className="ml-2 px-2 py-0.5 text-xs bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full">Testnet</span>
+      <header style={{
+        borderBottom: '1px solid var(--border-light)',
+        padding: '12px 24px',
+        background: 'var(--bg)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+      }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 style={{ fontFamily: 'var(--serif)', fontStyle: 'normal', fontWeight: 700, fontSize: '24px', lineHeight: 1, color: 'var(--text)' }}>
+              solarswap
+            </h1>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--sans)' }}>P2P Energy · XRPL</span>
+            <span style={{
+              padding: '2px 8px',
+              fontSize: '10px',
+              fontFamily: 'var(--mono)',
+              letterSpacing: '0.08em',
+              background: 'rgba(196,160,53,0.12)',
+              color: 'var(--gold)',
+              border: '1px solid rgba(196,160,53,0.25)',
+              borderRadius: '99px',
+            }}>TESTNET</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
-              <span className="text-xs text-slate-400">Share code:</span>
-              <span className="font-mono font-bold text-yellow-400 tracking-widest text-sm">{roomCode}</span>
-              <button
-                onClick={handleCopyCode}
-                className="text-xs text-slate-400 hover:text-white transition-colors ml-1"
-              >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 12px',
+            }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted-dark)', fontFamily: 'var(--mono)' }}>room:</span>
+              <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.15em', fontSize: '13px' }}>{roomCode}</span>
+              <button onClick={handleCopyCode} style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? 'var(--gold)' : 'var(--text-muted-dark)', fontFamily: 'var(--mono)', fontSize: '12px' }}>
                 {copied ? '✓' : '⎘'}
               </button>
             </div>
 
             {myHouseId && (
-              <div className="px-3 py-1.5 bg-blue-600/20 border border-blue-500/30 rounded-lg text-xs text-blue-300">
-                You are <span className="font-bold">House {myHouseId}</span>
-                {participantName ? ` (${participantName})` : ''}
+              <div style={{
+                padding: '6px 12px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '11px',
+                fontFamily: 'var(--mono)',
+                color: 'var(--gold)',
+              }}>
+                House <strong>{myHouseId}</strong>{participantName ? ` · ${participantName}` : ''}
               </div>
             )}
 
-            <a href="/" className="text-xs text-slate-400 hover:text-slate-300 transition-colors">
-              ← Leave
+            <a href="/" style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--mono)', textDecoration: 'none' }}>
+              ← leave
             </a>
           </div>
         </div>
       </header>
 
       {error && (
-        <div className="bg-red-900/50 border-b border-red-700 px-6 py-2 text-sm text-red-300">
+        <div style={{ background: 'rgba(200,80,80,0.1)', borderBottom: '1px solid rgba(200,80,80,0.3)', padding: '8px 24px', fontSize: '12px', color: 'var(--red)', fontFamily: 'var(--mono)' }}>
           Error: {error}
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '20px 28px' }}>
         {/* Metrics row */}
-        <div className="grid grid-cols-4 gap-3 mb-3">
-          <MetricCard
-            icon="🔋"
-            label="Battery"
-            value={battery ? `${battery.level}%` : '—'}
-            sub={battery ? (battery.trend === 'charging' ? '↑ Charging' : '↓ Discharging') : ''}
-            color={battery?.isReserveFloor ? 'red' : battery?.isDemandResponse ? 'orange' : 'green'}
-          />
-          <MetricCard
-            icon="⚡"
-            label="DEX Price"
-            value={`$${orderBook.midPrice.toFixed(4)}`}
-            sub="RLUSD/kWh"
-            color="yellow"
-          />
-          <MetricCard
-            icon="🌿"
-            label="CO₂ Saved"
-            value={`${(roomState?.co2SavedKg ?? 0).toFixed(1)} kg`}
-            sub="Room total (CA grid avg)"
-            color="green"
-          />
-          <MetricCard
-            icon="⏰"
-            label={battery?.timeOfDay === 'peak' ? 'PEAK HOURS' : 'Off-Peak'}
-            value={battery?.timeOfDay === 'peak' ? 'Active' : `Peak in ${nextPeakHour()}`}
-            sub="17:00–21:00 local"
-            color={battery?.timeOfDay === 'peak' ? 'red' : 'blue'}
-          />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '18px' }}>
+          <MetricCard icon="🔋" label="Battery" value={battery ? `${battery.level}%` : '—'} sub={battery ? (battery.trend === 'charging' ? '↑ Charging' : '↓ Discharging') : ''} color={battery?.isReserveFloor ? 'red' : battery?.isDemandResponse ? 'amber' : 'gold'} />
+          <MetricCard icon="⚡" label="DEX Price" value={`$${orderBook.midPrice.toFixed(4)}`} sub="RLUSD/kWh" color="gold" />
+          <MetricCard icon="🌿" label="CO₂ Saved" value={`${(roomState?.co2SavedKg ?? 0).toFixed(1)} kg`} sub="Room total" color="gold" />
+          <MetricCard icon="⏰" label={battery?.timeOfDay === 'peak' ? 'PEAK HOURS' : 'Off-Peak'} value={battery?.timeOfDay === 'peak' ? 'Active' : `Peak in ${nextPeakHour()}`} sub="17:00–21:00 local" color={battery?.timeOfDay === 'peak' ? 'red' : 'muted'} />
         </div>
 
-        {/* Batch settle bar — shown when there are queued micro-trades */}
+        {/* Batch settle bar */}
         {pendingSettlementCount > 0 && (
-          <div className="flex items-center justify-between bg-slate-800 border border-yellow-700/40 rounded-lg px-4 py-2 mb-3">
-            <div className="text-sm text-yellow-300">
-              ⚡ <strong>{pendingSettlementCount}</strong> micro-trade{pendingSettlementCount !== 1 ? 's' : ''} queued for atomic Batch settlement
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'var(--surface)',
+            border: '1px solid rgba(196,160,53,0.4)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '10px 16px',
+            marginBottom: '12px',
+          }}>
+            <div style={{ fontSize: '13px', color: 'var(--gold)', fontFamily: 'var(--mono)' }}>
+              ⚡ <strong>{pendingSettlementCount}</strong> micro-trade{pendingSettlementCount !== 1 ? 's' : ''} queued for atomic batch settlement
             </div>
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               {settleResult && !settling && (
-                <div className={`text-xs ${settleResult.error ? 'text-red-400' : 'text-green-400'}`}>
-                  {settleResult.error
-                    ? `Error: ${settleResult.error}`
-                    : settleResult.settledCount > 0
-                      ? `✓ ${settleResult.settledCount} settled${settleResult.atomic ? ' (atomic)' : ''} — ${settleResult.totalRlusd} RLUSD`
-                      : settleResult.message}
+                <div style={{ fontSize: '11px', fontFamily: 'var(--mono)', color: settleResult.error ? 'var(--red)' : 'var(--gold)' }}>
+                  {settleResult.error ? `Error: ${settleResult.error}` : settleResult.settledCount > 0 ? `✓ ${settleResult.settledCount} settled — ${settleResult.totalRlusd} RLUSD` : settleResult.message}
                 </div>
               )}
-              <button
-                onClick={handleBatchSettle}
-                disabled={settling}
-                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-600 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                {settling ? 'Settling...' : 'Settle All (Batch)'}
+              <button onClick={handleBatchSettle} disabled={settling} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '11px', opacity: settling ? 0.6 : 1 }}>
+                {settling ? 'settling...' : 'settle all (batch)'}
               </button>
             </div>
           </div>
         )}
 
         {/* Tab switcher */}
-        <div className="flex gap-1 bg-slate-800 rounded-lg p-1 mb-4 w-fit">
-          <button
-            onClick={() => setActiveTab('local')}
-            className={`px-4 py-1.5 text-sm rounded-md transition-colors ${activeTab === 'local' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'}`}
-          >
-            🏘 Local
-          </button>
-          <button
-            onClick={() => setActiveTab('global')}
-            className={`px-4 py-1.5 text-sm rounded-md transition-colors ${activeTab === 'global' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
-          >
-            🌍 Global Market
-          </button>
+        <div style={{
+          display: 'inline-flex',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '4px',
+          marginBottom: '16px',
+          gap: '4px',
+        }}>
+          {(['local', 'global'] as const).map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{
+              padding: '7px 18px',
+              fontSize: '12px',
+              fontFamily: 'var(--mono)',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              letterSpacing: '0.05em',
+              background: activeTab === tab ? 'var(--gold)' : 'transparent',
+              color: activeTab === tab ? 'var(--surface)' : 'var(--text-muted-dark)',
+              fontWeight: activeTab === tab ? 700 : 400,
+            }}>
+              {tab === 'local' ? '🏘 local' : '🌍 global market'}
+            </button>
+          ))}
         </div>
 
         {/* Local tab */}
         {activeTab === 'local' && (
           <>
-            <div className="grid grid-cols-12 gap-4">
-              {/* Left: Neighborhood Map + Participant Sidebar */}
-              <div className="col-span-7 space-y-3">
-                <div className="bg-slate-800 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="font-semibold text-sm text-slate-300">Neighborhood Grid</h2>
-                    <div className="flex items-center gap-2">
+            <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="card">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <span className="label">Neighborhood Grid</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {pendingEscrows.filter(e => e.status === 'pending_iot').length > 0 && (
-                        <span className="text-xs text-yellow-400 animate-pulse">📡 IoT Verifying</span>
+                        <span style={{ fontSize: '11px', color: 'var(--gold)', fontFamily: 'var(--mono)' }}>📡 IoT Verifying</span>
                       )}
                       {battery?.isDemandResponse && (
-                        <span className="text-xs text-orange-400 animate-pulse">⚠ Demand Response Active</span>
+                        <span style={{ fontSize: '11px', color: 'var(--red)', fontFamily: 'var(--mono)' }}>⚠ Demand Response</span>
                       )}
                     </div>
                   </div>
-                  <NeighborhoodMap
-                    batteryState={battery}
-                    activeFlow={activeFlow}
-                    participants={participants}
-                    pendingEscrows={pendingEscrows}
-                  />
+                  <NeighborhoodMap batteryState={battery} activeFlow={activeFlow} participants={participants} pendingEscrows={pendingEscrows} />
                 </div>
 
-                {/* Participant list */}
-                <div className="bg-slate-800 rounded-xl p-4">
-                  <h2 className="font-semibold text-sm text-slate-300 mb-3">
-                    Participants ({participants.length}/6)
-                  </h2>
+                <div className="card">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <span className="label">Participants</span>
+                    <span className="badge">{participants.length}/6</span>
+                  </div>
                   {participants.length === 0 ? (
-                    <div className="text-xs text-slate-500">No participants yet. Share the code!</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted-dark)', fontFamily: 'var(--mono)' }}>No participants yet. Share the code!</div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                       {participants.map(p => {
-                        const hasIot = pendingEscrows.some(
-                          e => e.participantId === p.id && e.status === 'pending_iot'
-                        );
+                        const isMe = p.id === participantId;
+                        const hasIot = pendingEscrows.some(e => e.participantId === p.id && e.status === 'pending_iot');
                         return (
-                          <div
-                            key={p.id}
-                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${
-                              p.id === participantId
-                                ? 'bg-blue-600/20 border-blue-500/40'
-                                : 'bg-slate-700/50 border-slate-600/30'
-                            }`}
-                          >
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                              p.id === participantId ? 'bg-blue-600' : 'bg-slate-600'
-                            }`}>
+                          <div key={p.id} style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '8px 10px',
+                            borderRadius: 'var(--radius-sm)',
+                            border: `1px solid ${isMe ? 'var(--gold)' : 'var(--border)'}`,
+                            background: isMe ? 'rgba(196,160,53,0.1)' : 'var(--surface2)',
+                            fontSize: '12px',
+                          }}>
+                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--mono)', background: isMe ? 'var(--gold)' : 'var(--border)', color: isMe ? 'var(--surface)' : 'var(--text-on-dark)' }}>
                               {p.houseId}
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="font-medium text-white truncate">
-                                {p.name}{p.id === participantId ? ' (you)' : ''}
-                                {hasIot && <span className="ml-1 text-yellow-400">📡</span>}
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontWeight: 500, color: 'var(--text-on-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {p.name}{isMe ? ' (you)' : ''}{hasIot && <span style={{ marginLeft: '4px' }}>📡</span>}
                               </div>
-                              <div className="text-slate-500 truncate font-mono text-[10px]">
+                              <div style={{ color: 'var(--text-muted-dark)', fontFamily: 'var(--mono)', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {p.address.slice(0, 8)}…{p.address.slice(-4)}
                               </div>
                             </div>
@@ -373,11 +346,11 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
                         );
                       })}
                       {Array.from({ length: 6 - participants.length }).map((_, i) => (
-                        <div key={`empty-${i}`} className="flex items-center gap-2 p-2 rounded-lg border border-dashed border-slate-700 text-xs text-slate-600">
-                          <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs">
+                        <div key={`empty-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', fontSize: '11px', color: 'var(--text-muted-dark)', fontFamily: 'var(--mono)' }}>
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'var(--text-muted-dark)' }}>
                             {participants.length + i + 1}
                           </div>
-                          <span>Waiting for player...</span>
+                          <span>waiting...</span>
                         </div>
                       ))}
                     </div>
@@ -385,47 +358,23 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
                 </div>
               </div>
 
-              {/* Right: OrderBook + TradePanels */}
-              <div className="col-span-5 space-y-4">
-                <OrderBook
-                  asks={orderBook.asks}
-                  bids={orderBook.bids}
-                  midPrice={orderBook.midPrice}
-                  ammSpotPrice={orderBook.ammSpotPrice}
-                />
-                <TradePanels
-                  currentPrice={orderBook.midPrice}
-                  onMintSuccess={handleMintSuccess}
-                  onBuySuccess={handleBuySuccess}
-                  roomCode={roomCode}
-                  participantId={participantId ?? undefined}
-                  fixedHouseId={myHouseId ?? undefined}
-                  pendingSettlementCount={pendingSettlementCount}
-                />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <OrderBook asks={orderBook.asks} bids={orderBook.bids} midPrice={orderBook.midPrice} ammSpotPrice={orderBook.ammSpotPrice} />
+                <TradePanels currentPrice={orderBook.midPrice} onMintSuccess={handleMintSuccess} onBuySuccess={handleBuySuccess} roomCode={roomCode} participantId={participantId ?? undefined} fixedHouseId={myHouseId ?? undefined} pendingSettlementCount={pendingSettlementCount} />
               </div>
             </div>
 
-            {/* Bottom row */}
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '20px' }}>
               <PriceChart currentPrice={orderBook.midPrice} ammSpotPrice={orderBook.ammSpotPrice} />
               <TradeHistory trades={trades} />
             </div>
           </>
         )}
 
-        {/* Global tab */}
         {activeTab === 'global' && (
-          <div className="space-y-4">
-            <GlobalMap
-              neighborhoods={globalNeighborhoods}
-              myRoomCode={roomCode}
-              activeArc={activeArc}
-            />
-            <GlobalMarketPanel
-              roomCode={roomCode}
-              participantId={participantId ?? ''}
-              myCity={roomState?.location?.city ?? 'Unknown'}
-              localPrice={roomState?.orderbook?.midPrice ?? 0.10}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <GlobalMap neighborhoods={globalNeighborhoods} myRoomCode={roomCode} activeArc={activeArc} />
+            <GlobalMarketPanel roomCode={roomCode} participantId={participantId ?? ''} myCity={roomState?.location?.city ?? 'Unknown'} localPrice={roomState?.orderbook?.midPrice ?? 0.10}
               onTradeSuccess={(result) => {
                 setActiveArc({ fromCode: result.sourceRoomCode ?? '', toCode: roomCode, id: Date.now().toString() });
                 setTimeout(() => setActiveArc(null), 3500);
@@ -440,24 +389,18 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 }
 
 function MetricCard({ icon, label, value, sub, color }: {
-  icon: string; label: string; value: string; sub: string; color: 'green' | 'yellow' | 'red' | 'orange' | 'blue';
+  icon: string; label: string; value: string; sub: string;
+  color: 'gold' | 'amber' | 'red' | 'muted';
 }) {
-  const colorMap = {
-    green: 'text-green-400',
-    yellow: 'text-yellow-400',
-    red: 'text-red-400',
-    orange: 'text-orange-400',
-    blue: 'text-blue-400',
-  };
-
+  const colorMap = { gold: 'var(--gold)', amber: 'var(--gold)', red: 'var(--red)', muted: 'var(--text-muted-dark)' };
   return (
-    <div className="bg-slate-800 rounded-lg p-3 border border-slate-700">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-base">{icon}</span>
-        <span className="text-xs text-slate-400 uppercase tracking-wide">{label}</span>
+    <div className="card" style={{ padding: '18px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+        <span style={{ fontSize: '14px' }}>{icon}</span>
+        <span className="label">{label}</span>
       </div>
-      <div className={`text-xl font-bold ${colorMap[color]}`}>{value}</div>
-      <div className="text-xs text-slate-500 mt-0.5">{sub}</div>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: '20px', fontWeight: 700, color: colorMap[color] }}>{value}</div>
+      <div style={{ fontSize: '11px', color: 'var(--text-muted-dark)', marginTop: '2px', fontFamily: 'var(--mono)' }}>{sub}</div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { latLngToSvg } from '@/lib/geo';
+import styles from './GlobalMap.module.css';
 
 interface Neighborhood {
   code: string;
@@ -30,11 +31,11 @@ interface GlobalMapProps {
 }
 
 const REGION_COLORS: Record<string, string> = {
-  NA: '#60a5fa',
-  EU: '#34d399',
-  APAC: '#f59e0b',
-  SA: '#f87171',
-  AF: '#a78bfa',
+  NA: '#c4a035',
+  EU: '#a88a28',
+  APAC: '#d4b045',
+  SA: '#c85050',
+  AF: '#9e9688',
 };
 
 export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: GlobalMapProps) {
@@ -60,23 +61,23 @@ export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: Glob
   };
 
   return (
-    <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-700">
-      <div className="px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-        <span className="text-sm font-semibold text-white">🌍 Global Grid</span>
-        <span className="text-xs text-slate-400">{neighborhoods.length} active neighborhood{neighborhoods.length !== 1 ? 's' : ''}</span>
+    <div className={styles.wrap}>
+      <div className={styles.header}>
+        <span className={styles.title}><span className="dot-live"/>global grid</span>
+        <span className={styles.count}>{neighborhoods.length} active neighborhood{neighborhoods.length !== 1 ? 's' : ''}</span>
       </div>
-      <svg viewBox="0 0 800 400" className="w-full" style={{ height: 280 }}>
+      <svg viewBox="0 0 800 400" className={styles.map} style={{ height: 280 }}>
         <defs>
           <radialGradient id="oceanGrad" cx="50%" cy="50%" r="70%">
-            <stop offset="0%" stopColor="#0f2744" />
-            <stop offset="100%" stopColor="#080f1a" />
+            <stop offset="0%" stopColor="#111a15" />
+            <stop offset="100%" stopColor="#0a0f0d" />
           </radialGradient>
           <filter id="nodeGlow">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
           <marker id="arcArrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
-            <polygon points="0 0, 6 2, 0 4" fill="#fbbf24" opacity="0.8" />
+            <polygon points="0 0, 6 2, 0 4" fill="#f5c842" opacity="0.8" />
           </marker>
         </defs>
 
@@ -86,11 +87,11 @@ export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: Glob
         {/* Lat/lng grid */}
         {[-60,-30,0,30,60].map(lat => {
           const y = (90-lat)/180*400;
-          return <line key={lat} x1="0" y1={y} x2="800" y2={y} stroke="#1e3a5f" strokeWidth="0.5" opacity="0.5" />;
+          return <line key={lat} x1="0" y1={y} x2="800" y2={y} stroke="#2a4038" strokeWidth="0.5" opacity="0.5" />;
         })}
         {[-120,-60,0,60,120].map(lng => {
           const x = (lng+180)/360*800;
-          return <line key={lng} x1={x} y1="0" x2={x} y2="400" stroke="#1e3a5f" strokeWidth="0.5" opacity="0.5" />;
+          return <line key={lng} x1={x} y1="0" x2={x} y2="400" stroke="#2a4038" strokeWidth="0.5" opacity="0.5" />;
         })}
 
         {/* Trade arc */}
@@ -102,7 +103,7 @@ export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: Glob
             <path
               d={arcPath(from, to)}
               fill="none"
-              stroke="#fbbf24"
+              stroke="#f5c842"
               strokeWidth="2"
               strokeDasharray="8,4"
               markerEnd="url(#arcArrow)"
@@ -117,7 +118,7 @@ export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: Glob
         {neighborhoods.map(n => {
           const pos = getPos(n);
           const isMe = n.code === myRoomCode;
-          const color = isMe ? '#fbbf24' : REGION_COLORS[n.region] || '#94a3b8';
+          const color = isMe ? '#e8408c' : REGION_COLORS[n.region] || '#9e9688';
           const r = isMe ? 10 : 6 + n.participantCount;
           const isHovered = hoveredRoom === n.code;
 
@@ -127,7 +128,7 @@ export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: Glob
               transform={`translate(${pos.x}, ${pos.y})`}
               onMouseEnter={() => setHoveredRoom(n.code)}
               onMouseLeave={() => setHoveredRoom(null)}
-              className="cursor-pointer"
+              style={{ cursor: 'pointer' }}
             >
               {/* Pulse ring */}
               <circle r={r + 8} fill="none" stroke={color} strokeWidth="1" opacity="0.2">
@@ -138,7 +139,7 @@ export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: Glob
               {/* Main dot */}
               <circle r={r} fill={color} opacity="0.9" filter="url(#nodeGlow)" />
               {n.isDemandResponse && (
-                <circle r={r+3} fill="none" stroke="#f97316" strokeWidth="1.5" opacity="0.7" />
+                <circle r={r+3} fill="none" stroke="#c85050" strokeWidth="1.5" opacity="0.7" />
               )}
 
               {/* City label */}
@@ -147,17 +148,17 @@ export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: Glob
               </text>
 
               {/* Battery badge */}
-              <text y={r + 14} textAnchor="middle" fill={n.batteryLevel < 30 ? '#f97316' : '#86efac'} fontSize="8">
+              <text y={r + 14} textAnchor="middle" fill={n.batteryLevel < 30 ? '#c85050' : '#c4a035'} fontSize="8">
                 🔋{n.batteryLevel}%
               </text>
 
               {/* Hover tooltip */}
               {isHovered && (
                 <g>
-                  <rect x={-60} y={r+18} width={120} height={44} rx={4} fill="#1e293b" stroke="#334155" strokeWidth="1" />
-                  <text x={0} y={r+32} textAnchor="middle" fill="#e2e8f0" fontSize="9">{n.flag} {n.city}, {n.country}</text>
-                  <text x={0} y={r+44} textAnchor="middle" fill="#fbbf24" fontSize="9">⚡ {n.pricePerKwh.toFixed(4)} RLUSD/kWh</text>
-                  <text x={0} y={r+56} textAnchor="middle" fill="#94a3b8" fontSize="8">{n.participantCount} participant{n.participantCount !== 1 ? 's' : ''}</text>
+                  <rect x={-60} y={r+18} width={120} height={44} rx={4} fill="#1c2e26" stroke="#2a4038" strokeWidth="1" />
+                  <text x={0} y={r+32} textAnchor="middle" fill="#e8f5ee" fontSize="9">{n.flag} {n.city}, {n.country}</text>
+                  <text x={0} y={r+44} textAnchor="middle" fill="#f5c842" fontSize="9">⚡ {n.pricePerKwh.toFixed(4)} RLUSD/kWh</text>
+                  <text x={0} y={r+56} textAnchor="middle" fill="#7aab90" fontSize="8">{n.participantCount} participant{n.participantCount !== 1 ? 's' : ''}</text>
                 </g>
               )}
             </g>
@@ -166,8 +167,8 @@ export default function GlobalMap({ neighborhoods, myRoomCode, activeArc }: Glob
 
         {/* "No neighborhoods" placeholder */}
         {neighborhoods.length === 0 && (
-          <text x="400" y="200" textAnchor="middle" fill="#475569" fontSize="14">
-            No active neighborhoods yet
+          <text x="400" y="200" textAnchor="middle" fill="#4d7a62" fontSize="13" fontFamily="Space Mono, monospace">
+            no active neighborhoods yet
           </text>
         )}
       </svg>

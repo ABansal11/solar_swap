@@ -93,10 +93,10 @@ export default function NeighborhoodMap({
 
   if (!batteryState) {
     return (
-      <div className="flex items-center justify-center h-96 text-gray-400">
-        <div className="text-center">
-          <div className="text-4xl mb-2">⚡</div>
-          <div>Loading neighborhood...</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '384px', color: 'var(--text-muted-dark)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '36px', marginBottom: '8px' }}>⚡</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '12px' }}>Loading neighborhood...</div>
         </div>
       </div>
     );
@@ -104,7 +104,7 @@ export default function NeighborhoodMap({
 
   const { level, isDemandResponse, isReserveFloor, houses } = batteryState;
 
-  const batteryColor = isReserveFloor ? '#ef4444' : isDemandResponse ? '#f97316' : '#22c55e';
+  const batteryColor = isReserveFloor ? '#c85050' : isDemandResponse ? '#c07830' : '#c4a035';
   const batteryFillHeight = (level / 100) * 70;
 
   const participantByHouse: Record<number, ParticipantInfo> = {};
@@ -123,9 +123,14 @@ export default function NeighborhoodMap({
   return (
     <div className="relative">
       {(isDemandResponse || isReserveFloor) && (
-        <div className={`absolute top-0 left-0 right-0 z-10 text-center py-1 text-sm font-bold rounded-t-lg ${
-          isReserveFloor ? 'bg-red-500 text-white' : 'bg-orange-400 text-white'
-        }`}>
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+          textAlign: 'center', padding: '4px 0',
+          fontSize: '12px', fontWeight: 700, fontFamily: 'var(--mono)',
+          borderRadius: 'var(--radius) var(--radius) 0 0',
+          background: isReserveFloor ? 'var(--red)' : '#c07830',
+          color: '#f2ede2',
+        }}>
           {isReserveFloor ? '🚫 RESERVE FLOOR — Minting Suspended' : '⚠ DEMAND RESPONSE ACTIVE — Prices Rising'}
         </div>
       )}
@@ -137,7 +142,7 @@ export default function NeighborhoodMap({
       >
         <defs>
           <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="3" refY="2" orient="auto">
-            <polygon points="0 0, 6 2, 0 4" fill="#fbbf24" />
+            <polygon points="0 0, 6 2, 0 4" fill="#c4a035" />
           </marker>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -156,8 +161,8 @@ export default function NeighborhoodMap({
         </defs>
 
         {/* Background grid lines */}
-        <circle cx={CENTER.x} cy={CENTER.y} r="160" fill="none" stroke="#1e3a5f" strokeWidth="1" strokeDasharray="4,8" opacity="0.4" />
-        <circle cx={CENTER.x} cy={CENTER.y} r="100" fill="none" stroke="#1e3a5f" strokeWidth="1" strokeDasharray="4,8" opacity="0.2" />
+        <circle cx={CENTER.x} cy={CENTER.y} r="160" fill="none" stroke="#2e2a1c" strokeWidth="1" strokeDasharray="4,8" opacity="0.5" />
+        <circle cx={CENTER.x} cy={CENTER.y} r="100" fill="none" stroke="#2e2a1c" strokeWidth="1" strokeDasharray="4,8" opacity="0.3" />
 
         {/* Connection lines from houses to center */}
         {houses.map(house => (
@@ -167,10 +172,10 @@ export default function NeighborhoodMap({
             y1={house.y}
             x2={CENTER.x}
             y2={CENTER.y}
-            stroke={house.isProducing ? '#fbbf24' : '#334155'}
+            stroke={house.isProducing ? '#c4a035' : '#2e2a1c'}
             strokeWidth={house.isProducing ? 1.5 : 1}
             strokeDasharray={house.isProducing ? '4,3' : '3,6'}
-            opacity={house.isProducing ? 0.7 : 0.3}
+            opacity={house.isProducing ? 0.7 : 0.4}
           />
         ))}
 
@@ -184,7 +189,7 @@ export default function NeighborhoodMap({
               cy={house.y}
               r="32"
               fill="none"
-              stroke="#eab308"
+              stroke="#c4a035"
               strokeWidth="2.5"
               strokeDasharray="6,3"
               opacity={blink ? 0.9 : 0.2}
@@ -201,7 +206,7 @@ export default function NeighborhoodMap({
               y1={line.fromY}
               x2={line.toX}
               y2={line.toY}
-              stroke="#fbbf24"
+              stroke="#c4a035"
               strokeWidth="2.5"
               strokeDasharray="6,4"
               markerEnd="url(#arrowhead)"
@@ -215,7 +220,7 @@ export default function NeighborhoodMap({
 
         {/* Central battery */}
         <g transform={`translate(${CENTER.x - 25}, ${CENTER.y - 45})`}>
-          <rect x="0" y="10" width="50" height="75" rx="6" ry="6" fill="#0f172a" stroke={batteryColor} strokeWidth="2" />
+          <rect x="0" y="10" width="50" height="75" rx="6" ry="6" fill="#1e1a12" stroke={batteryColor} strokeWidth="2" />
           <rect x="15" y="5" width="20" height="8" rx="3" ry="3" fill={batteryColor} opacity="0.8" />
           <clipPath id="batteryClip">
             <rect x="0" y="10" width="50" height="75" rx="6" ry="6" />
@@ -230,11 +235,11 @@ export default function NeighborhoodMap({
             opacity="0.7"
             clipPath="url(#batteryClip)"
           />
-          <text x="25" y="55" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">{level}%</text>
-          <text x="25" y="70" textAnchor="middle" fill="#94a3b8" fontSize="9">BATTERY</text>
+          <text x="25" y="55" textAnchor="middle" fill="#f2ede2" fontSize="14" fontWeight="bold">{level}%</text>
+          <text x="25" y="70" textAnchor="middle" fill="#9e9688" fontSize="9">BATTERY</text>
         </g>
 
-        <text x={CENTER.x} y={CENTER.y + 55} textAnchor="middle" fill="#64748b" fontSize="8">⟳ AMM POOL</text>
+        <text x={CENTER.x} y={CENTER.y + 55} textAnchor="middle" fill="#7a7060" fontSize="8">⟳ AMM POOL</text>
 
         {/* Houses */}
         {houses.map(house => (
@@ -268,48 +273,48 @@ function HouseIcon({
   const isOccupied = !!participantName;
   const isProducing = house.isProducing;
 
-  const houseColor = iotPending ? '#713f12' : isProducing ? '#1e40af' : isOccupied ? '#1e293b' : '#111827';
-  const roofColor = iotPending ? '#92400e' : isProducing ? '#3b82f6' : isOccupied ? '#334155' : '#1f2937';
-  const solarColor = iotPending ? '#eab308' : isProducing ? '#fbbf24' : isOccupied ? '#475569' : '#1f2937';
-  const strokeColor = iotPending ? '#ca8a04' : isProducing ? '#3b82f6' : isOccupied ? '#334155' : '#1e293b';
+  const houseColor = iotPending ? '#3d2c10' : isProducing ? '#3a2c1a' : isOccupied ? '#1e1a12' : '#161210';
+  const roofColor = iotPending ? '#5a3c1a' : isProducing ? '#5a4a2a' : isOccupied ? '#2a2418' : '#1c1810';
+  const solarColor = iotPending ? '#c4a035' : isProducing ? '#c4a035' : isOccupied ? '#3d3528' : '#1c1810';
+  const strokeColor = iotPending ? '#c4a035' : isProducing ? '#c4a035' : isOccupied ? '#2a2418' : '#1e1a12';
 
   return (
     <g transform={`translate(${cx - 22}, ${cy - 28})`} className="cursor-pointer" opacity={isOccupied || participantName === undefined ? 1 : 0.4}>
       <rect x="4" y="22" width="36" height="26" rx="2" fill={houseColor} stroke={strokeColor} strokeWidth="1.5" />
-      <polygon points="2,22 22,4 42,22" fill={roofColor} stroke={iotPending ? '#ca8a04' : isProducing ? '#60a5fa' : isOccupied ? '#475569' : '#1f2937'} strokeWidth="1" />
-      <rect x="15" y="33" width="10" height="15" rx="1" fill={isProducing || iotPending ? '#1d4ed8' : '#0f172a'} />
+      <polygon points="2,22 22,4 42,22" fill={roofColor} stroke={iotPending ? '#c4a035' : isProducing ? '#c4a035' : isOccupied ? '#3d3528' : '#1c1810'} strokeWidth="1" />
+      <rect x="15" y="33" width="10" height="15" rx="1" fill={isProducing || iotPending ? '#3a2c1a' : '#161210'} />
       <g transform="translate(8, 10)">
-        <rect x="0" y="0" width="12" height="8" rx="1" fill={solarColor} stroke={isProducing || iotPending ? '#f59e0b' : '#64748b'} strokeWidth="0.8" />
+        <rect x="0" y="0" width="12" height="8" rx="1" fill={solarColor} stroke={isProducing || iotPending ? '#c4a035' : '#3d3528'} strokeWidth="0.8" />
         {(isProducing || iotPending) && (
           <>
-            <line x1="4" y1="0" x2="4" y2="8" stroke="#92400e" strokeWidth="0.5" />
-            <line x1="8" y1="0" x2="8" y2="8" stroke="#92400e" strokeWidth="0.5" />
-            <line x1="0" y1="3" x2="12" y2="3" stroke="#92400e" strokeWidth="0.5" />
+            <line x1="4" y1="0" x2="4" y2="8" stroke="#7a6020" strokeWidth="0.5" />
+            <line x1="8" y1="0" x2="8" y2="8" stroke="#7a6020" strokeWidth="0.5" />
+            <line x1="0" y1="3" x2="12" y2="3" stroke="#7a6020" strokeWidth="0.5" />
           </>
         )}
       </g>
-      <text x="22" y="45" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">{house.id}</text>
+      <text x="22" y="45" textAnchor="middle" fill="#f2ede2" fontSize="10" fontWeight="bold">{house.id}</text>
       {participantName !== undefined ? (
         isOccupied ? (
-          <text x="22" y="58" textAnchor="middle" fill={iotPending ? '#eab308' : '#60a5fa'} fontSize="7" fontWeight="bold">
+          <text x="22" y="58" textAnchor="middle" fill={iotPending ? '#c4a035' : '#c4a035'} fontSize="7" fontWeight="bold">
             {participantName.length > 8 ? participantName.slice(0, 7) + '…' : participantName}
           </text>
         ) : (
-          <text x="22" y="58" textAnchor="middle" fill="#475569" fontSize="7">Empty</text>
+          <text x="22" y="58" textAnchor="middle" fill="#4d4030" fontSize="7">Empty</text>
         )
       ) : null}
       {iotPending && (
-        <text x="22" y={participantName !== undefined ? 65 : 58} textAnchor="middle" fill="#eab308" fontSize="7">
+        <text x="22" y={participantName !== undefined ? 65 : 58} textAnchor="middle" fill="#c4a035" fontSize="7">
           📡 IoT
         </text>
       )}
       {isProducing && !iotPending && (
-        <text x="22" y={participantName !== undefined ? 65 : 58} textAnchor="middle" fill="#fbbf24" fontSize="7">
+        <text x="22" y={participantName !== undefined ? 65 : 58} textAnchor="middle" fill="#c4a035" fontSize="7">
           ⚡{house.solarOutput.toFixed(1)}kW
         </text>
       )}
       {house.balance > 0 && (
-        <text x="22" y={(isProducing || iotPending) ? (participantName !== undefined ? 72 : 65) : (participantName !== undefined ? 65 : 58)} textAnchor="middle" fill="#22c55e" fontSize="7">
+        <text x="22" y={(isProducing || iotPending) ? (participantName !== undefined ? 72 : 65) : (participantName !== undefined ? 65 : 58)} textAnchor="middle" fill="#c4a035" fontSize="7">
           {house.balance.toFixed(1)} SOLAR
         </text>
       )}

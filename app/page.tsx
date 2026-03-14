@@ -14,10 +14,7 @@ export default function LobbyPage() {
   const [showCityPicker, setShowCityPicker] = useState(false);
 
   async function handleCreateClick() {
-    if (!name.trim()) {
-      setError('Please enter your name first.');
-      return;
-    }
+    if (!name.trim()) { setError('Please enter your name first.'); return; }
     setError('');
     setShowCityPicker(true);
   }
@@ -33,10 +30,7 @@ export default function LobbyPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create room');
-
       const code: string = data.code;
-
-      // Auto-join the room as creator
       const joinRes = await fetch(`/api/rooms/${code}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,26 +38,17 @@ export default function LobbyPage() {
       });
       const joinData = await joinRes.json();
       if (!joinRes.ok) throw new Error(joinData.error || 'Failed to join room');
-
       localStorage.setItem('participantId', joinData.participantId);
       localStorage.setItem('participantName', name.trim());
       router.push(`/room/${code}`);
-    } catch (e: any) {
-      setError(e.message);
-    }
+    } catch (e: any) { setError(e.message); }
     setCreating(false);
   }
 
   async function handleJoin() {
-    if (!name.trim()) {
-      setError('Please enter your name first.');
-      return;
-    }
+    if (!name.trim()) { setError('Please enter your name first.'); return; }
     const code = joinCode.trim().toUpperCase();
-    if (code.length !== 6) {
-      setError('Join code must be 6 characters.');
-      return;
-    }
+    if (code.length !== 6) { setError('Join code must be 6 characters.'); return; }
     setJoining(true);
     setError('');
     try {
@@ -74,123 +59,237 @@ export default function LobbyPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to join room');
-
       localStorage.setItem('participantId', data.participantId);
       localStorage.setItem('participantName', name.trim());
       router.push(`/room/${code}`);
-    } catch (e: any) {
-      setError(e.message);
-    }
+    } catch (e: any) { setError(e.message); }
     setJoining(false);
   }
 
   const isLoading = creating || joining;
 
   return (
-    <main className="min-h-screen bg-slate-900 text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⚡</div>
-          <h1 className="text-3xl font-bold text-white">SolarSwap</h1>
-          <p className="text-slate-400 mt-1 text-sm">P2P Energy Marketplace on XRPL</p>
-          <span className="mt-2 inline-block px-2 py-0.5 text-xs bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full">Testnet</span>
+    <main style={{
+      minHeight: '100vh',
+      background: 'var(--bg)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px 16px',
+    }}>
+      <div style={{ width: '100%', maxWidth: '420px' }}>
+
+        {/* Logo / title */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h1 style={{
+            fontFamily: 'var(--serif)',
+            fontStyle: 'normal',
+            fontSize: '80px',
+            fontWeight: 700,
+            lineHeight: 0.95,
+            color: 'var(--text)',
+            letterSpacing: '-0.02em',
+            marginBottom: '14px',
+          }}>
+            solar<br/>swap
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '16px', fontFamily: 'var(--sans)' }}>
+            P2P Energy Marketplace on XRPL
+          </p>
+          <span style={{
+            display: 'inline-block',
+            marginTop: '10px',
+            padding: '3px 10px',
+            fontSize: '10px',
+            fontFamily: 'var(--mono)',
+            letterSpacing: '0.08em',
+            background: 'rgba(196,160,53,0.12)',
+            color: 'var(--gold)',
+            border: '1px solid rgba(196,160,53,0.3)',
+            borderRadius: '99px',
+          }}>TESTNET</span>
         </div>
 
-        <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+        {/* Card */}
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          padding: '32px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '22px',
+        }}>
           {/* Name input */}
-          <div className="mb-5">
-            <label className="block text-sm text-slate-400 mb-1.5">Your name</label>
+          <div>
+            <label style={{
+              display: 'block',
+              fontFamily: 'var(--mono)',
+              fontSize: '12px',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted-dark)',
+              marginBottom: '10px',
+            }}>Your name</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Enter your name..."
-              className="w-full bg-slate-700 text-white rounded-lg px-4 py-2.5 border border-slate-600 focus:border-blue-500 focus:outline-none text-sm"
               disabled={isLoading}
+              style={{
+                width: '100%',
+                background: 'var(--surface2)',
+                color: 'var(--text-on-dark)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '14px 18px',
+                border: '1px solid var(--border)',
+                fontSize: '16px',
+                fontFamily: 'var(--sans)',
+                outline: 'none',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
+              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
             />
           </div>
 
-          {/* Create Room */}
+          {/* Create room */}
           {!showCityPicker ? (
             <button
+              className="btn btn-primary"
               onClick={handleCreateClick}
               disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl text-sm transition-colors mb-4"
+              style={{ width: '100%', opacity: isLoading ? 0.6 : 1 }}
             >
-              {creating ? '⏳ Setting up room... (30–60s)' : 'Create Room'}
+              {creating ? '⏳ setting up room...' : 'create room'}
             </button>
           ) : (
-            <div className="mt-4 space-y-2 mb-4">
-              <p className="text-sm text-slate-300 text-center">Pick your neighborhood city:</p>
-              <div className="grid grid-cols-3 gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <span style={{
+                fontFamily: 'var(--mono)',
+                fontSize: '10px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted-dark)',
+              }}>pick your neighborhood city</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                 {CITIES.map(city => (
                   <button
                     key={city.city}
                     onClick={() => handleCreateRoom(city.city)}
                     disabled={creating}
-                    className="bg-slate-700 hover:bg-slate-600 text-white text-xs rounded-lg p-2 text-center transition-colors"
+                    style={{
+                      background: 'var(--surface2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '10px 6px',
+                      cursor: 'pointer',
+                      color: 'var(--text-on-dark)',
+                      transition: 'all 0.15s',
+                      textAlign: 'center',
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+                    }}
                   >
-                    <div className="text-lg">{city.flag}</div>
-                    <div className="font-medium">{city.city}</div>
-                    <div className="text-slate-400">{city.country}</div>
+                    <div style={{ fontSize: '18px' }}>{city.flag}</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: '10px', fontWeight: 700, marginTop: '3px' }}>{city.city}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--text-muted-dark)', marginTop: '1px' }}>{city.country}</div>
                   </button>
                 ))}
               </div>
               {creating && (
-                <p className="text-xs text-blue-300 text-center">⏳ Setting up room... (30–60s)</p>
+                <p style={{ fontSize: '11px', color: 'var(--gold)', textAlign: 'center', fontFamily: 'var(--mono)' }}>
+                  ⏳ setting up room... (30–60s)
+                </p>
               )}
               <button
                 onClick={() => setShowCityPicker(false)}
                 disabled={creating}
-                className="w-full text-xs text-slate-500 hover:text-slate-400 py-1"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted-dark)', fontFamily: 'var(--mono)', padding: '2px 0' }}
               >
-                ← Back
+                ← back
               </button>
             </div>
           )}
 
           {/* Divider */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 h-px bg-slate-700" />
-            <span className="text-xs text-slate-500">or join existing</span>
-            <div className="flex-1 h-px bg-slate-700" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            <span style={{ fontSize: '12px', color: 'var(--text-muted-dark)', fontFamily: 'var(--mono)', letterSpacing: '0.08em' }}>or join existing</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
           </div>
 
-          {/* Join Room */}
-          <div className="flex gap-2">
+          {/* Join room */}
+          <div style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
               value={joinCode}
               onChange={e => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="Code: XXXXXX"
+              placeholder="CODE: XXXXXX"
               maxLength={6}
-              className="flex-1 bg-slate-700 text-white rounded-lg px-4 py-2.5 border border-slate-600 focus:border-green-500 focus:outline-none text-sm font-mono tracking-widest uppercase"
               disabled={isLoading}
+              style={{
+                flex: 1,
+                background: 'var(--surface2)',
+                color: 'var(--text-on-dark)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '14px 18px',
+                border: '1px solid var(--border)',
+                fontFamily: 'var(--mono)',
+                fontSize: '15px',
+                letterSpacing: '0.15em',
+                outline: 'none',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
+              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
             />
             <button
+              className="btn btn-primary"
               onClick={handleJoin}
               disabled={isLoading}
-              className="bg-green-600 hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors whitespace-nowrap"
+              style={{ whiteSpace: 'nowrap', padding: '14px 24px', opacity: isLoading ? 0.6 : 1 }}
             >
-              {joining ? '⏳ Joining...' : 'Join Room'}
+              {joining ? '⏳' : 'join →'}
             </button>
           </div>
 
           {error && (
-            <div className="mt-4 p-3 bg-red-900/50 border border-red-700/50 rounded-lg text-xs text-red-300">
+            <div style={{
+              padding: '10px 14px',
+              background: 'rgba(200,80,80,0.15)',
+              border: '1px solid rgba(200,80,80,0.3)',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '12px',
+              color: 'var(--red)',
+              fontFamily: 'var(--mono)',
+            }}>
               {error}
             </div>
           )}
 
           {joining && (
-            <div className="mt-4 p-3 bg-blue-900/30 border border-blue-700/50 rounded-lg text-xs text-blue-300">
+            <div style={{
+              padding: '10px 14px',
+              background: 'var(--gold-muted)',
+              border: '1px solid rgba(196,160,53,0.3)',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '11px',
+              color: 'var(--text-muted-dark)',
+              fontFamily: 'var(--mono)',
+              lineHeight: 1.6,
+            }}>
               Setting up your XRPL wallet and authorizing MPT tokens... this can take 30–60 seconds.
             </div>
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-600 mt-4">
+        <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', marginTop: '20px', fontFamily: 'var(--mono)' }}>
           Each room supports up to 6 participants. Each gets their own XRPL wallet.
         </p>
       </div>
